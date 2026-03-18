@@ -1,6 +1,7 @@
-// Word Search Game - Main Logic
+// Word Search Game - Enhanced Version with Timer, Hints, Combos, and Advanced Features
 class WordSearchGame {
     constructor() {
+        // Core game state
         this.currentLevel = 1;
         this.score = 0;
         this.grid = [];
@@ -9,6 +10,16 @@ class WordSearchGame {
         this.selectedCells = [];
         this.isSelecting = false;
         this.wordPositions = []; // Stores {word, cells: [{row, col}]}
+
+        // Enhanced features
+        this.timer = null;
+        this.timeRemaining = 0;
+        this.combo = 0;
+        this.lastWordFoundTime = 0;
+        this.comboTimeout = null;
+        this.hintsUsed = 0;
+        this.levelStartTime = 0;
+        this.isPaused = false;
 
         this.initElements();
         this.loadProgress();
@@ -21,104 +32,165 @@ class WordSearchGame {
         this.wordsListElement = document.getElementById('wordsList');
         this.currentLevelElement = document.getElementById('currentLevel');
         this.scoreElement = document.getElementById('score');
+        this.timerElement = document.getElementById('timer');
+        this.comboElement = document.getElementById('combo');
+        this.themeDisplayElement = document.getElementById('themeDisplay');
+        this.progressBarElement = document.getElementById('progressBar');
+        this.progressTextElement = document.getElementById('progressText');
         this.resetBtn = document.getElementById('resetBtn');
+        this.hintBtn = document.getElementById('hintBtn');
         this.nextBtn = document.getElementById('nextBtn');
         this.victoryModal = document.getElementById('victoryModal');
         this.continueBtn = document.getElementById('continueBtn');
+        this.toastElement = document.getElementById('toast');
     }
 
     loadLevel(levelNumber) {
         const levelData = LEVELS[levelNumber - 1];
         if (!levelData) {
-            this.showVictory('You completed all levels! 🎊');
+            this.showVictory('🎊 Congratulations! You completed all levels!');
             return;
         }
 
         this.currentLevel = levelNumber;
-        this.words = levelData.words;
+        this.words = [...levelData.words]; // Copy array
         this.foundWords.clear();
         this.selectedCells = [];
         this.wordPositions = [];
+        this.combo = 0;
+        this.hintsUsed = 0;
+        this.levelStartTime = Date.now();
 
         this.currentLevelElement.textContent = levelNumber;
+        this.themeDisplayElement.textContent = `Theme: ${levelData.theme}`;
         this.nextBtn.style.display = 'none';
 
+        // Update hint cost based on difficulty
+        const difficulty = DIFFICULTY_SETTINGS[levelData.difficulty];
+        document.getElementById('hintCost').textContent = `(${difficulty.hintCost})`;
+        this.hintBtn.disabled = false;
+
         this.createGrid(levelData.gridSize);
-        this.placeWordsInGrid();
+        this.placeWordsInGridAdvanced(levelData.difficulty);
         this.fillEmptySpaces();
         this.renderGrid();
         this.renderWordsList();
+        this.updateProgress();
+
+        // Start timer
+        this.startTimer(levelData.timeLimit);
     }
 
     createGrid(size) {
         this.grid = Array(size).fill(null).map(() => Array(size).fill(''));
     }
 
-    // TODO: USER IMPLEMENTATION
-    // This is a key algorithm that determines how words are placed in the grid
-    // Multiple approaches are valid here - you decide the strategy!
-    placeWordsInGrid() {
-        const directions = [
-            { dr: 0, dc: 1 },   // Horizontal right
-            { dr: 1, dc: 0 },   // Vertical down
-            { dr: 1, dc: 1 },   // Diagonal down-right
-            { dr: -1, dc: 1 },  // Diagonal up-right
+    // ENHANCED ALGORITHM: Intelligent word placement with backtracking
+    placeWordsInGridAdvanced(difficulty) {
+        const settings = DIFFICULTY_SETTINGS[difficulty];
+
+        // Define all 8 directions
+        const allDirections = [
+            { dr: 0, dc: 1, name: 'right' },        // Horizontal right
+            { dr: 1, dc: 0, name: 'down' },         // Vertical down
+            { dr: 1, dc: 1, name: 'diag-down' },    // Diagonal down-right
+            { dr: -1, dc: 1, name: 'diag-up' },     // Diagonal up-right
         ];
 
-        for (const word of this.words) {
+        // Sort words by length (longest first) for better placement success
+        const sortedWords = [...this.words].sort((a, b) => b.length - a.length);
+
+        for (const word of sortedWords) {
             let placed = false;
             let attempts = 0;
-            const maxAttempts = 100;
+            const maxAttempts = 150;
+
+            // Shuffle directions based on difficulty
+            const availableDirections = this.getDirectionsForDifficulty(allDirections, settings);
 
             while (!placed && attempts < maxAttempts) {
                 attempts++;
 
-                // Random starting position
+                // Try different starting positions
                 const row = Math.floor(Math.random() * this.grid.length);
                 const col = Math.floor(Math.random() * this.grid[0].length);
 
-                // Random direction
-                const dir = directions[Math.floor(Math.random() * directions.length)];
+                // Try each direction
+                for (const dir of availableDirections) {
+                    // Randomly reverse word based on difficulty
+                    const shouldReverse = Math.random() < settings.reverseChance;
+                    const finalWord = shouldReverse ? word.split('').reverse().join('') : word;
 
-                // Check if word fits
-                const cells = [];
-                let canPlace = true;
-
-                for (let i = 0; i < word.length; i++) {
-                    const newRow = row + (dir.dr * i);
-                    const newCol = col + (dir.dc * i);
-
-                    // Check bounds
-                    if (newRow < 0 || newRow >= this.grid.length ||
-                        newCol < 0 || newCol >= this.grid[0].length) {
-                        canPlace = false;
+                    if (this.tryPlaceWord(finalWord, row, col, dir)) {
+                        placed = true;
                         break;
                     }
-
-                    // Check if cell is empty or has the same letter (allows overlap)
-                    if (this.grid[newRow][newCol] !== '' &&
-                        this.grid[newRow][newCol] !== word[i]) {
-                        canPlace = false;
-                        break;
-                    }
-
-                    cells.push({ row: newRow, col: newCol });
-                }
-
-                // Place the word if possible
-                if (canPlace) {
-                    for (let i = 0; i < word.length; i++) {
-                        this.grid[cells[i].row][cells[i].col] = word[i];
-                    }
-                    this.wordPositions.push({ word, cells });
-                    placed = true;
                 }
             }
 
             if (!placed) {
-                console.warn(`Could not place word: ${word}`);
+                console.warn(`Could not place word: ${word} after ${attempts} attempts`);
             }
         }
+    }
+
+    getDirectionsForDifficulty(allDirections, settings) {
+        const directions = [];
+
+        // Always include horizontal and vertical
+        directions.push(allDirections[0], allDirections[1]);
+
+        // Add diagonals based on difficulty
+        if (Math.random() < settings.diagonalChance) {
+            directions.push(allDirections[2]);
+        }
+        if (Math.random() < settings.diagonalChance) {
+            directions.push(allDirections[3]);
+        }
+
+        // Shuffle for randomness
+        return directions.sort(() => Math.random() - 0.5);
+    }
+
+    tryPlaceWord(word, startRow, startCol, direction) {
+        const cells = [];
+
+        // Check if word fits
+        for (let i = 0; i < word.length; i++) {
+            const row = startRow + (direction.dr * i);
+            const col = startCol + (direction.dc * i);
+
+            // Check bounds
+            if (row < 0 || row >= this.grid.length ||
+                col < 0 || col >= this.grid[0].length) {
+                return false;
+            }
+
+            // Check if cell is empty or has matching letter
+            if (this.grid[row][col] !== '' && this.grid[row][col] !== word[i]) {
+                return false;
+            }
+
+            cells.push({ row, col });
+        }
+
+        // Place the word
+        for (let i = 0; i < word.length; i++) {
+            this.grid[cells[i].row][cells[i].col] = word[i];
+        }
+
+        // Find the original word (might be reversed)
+        const originalWord = this.words.find(w =>
+            w === word || w.split('').reverse().join('') === word
+        );
+
+        this.wordPositions.push({
+            word: originalWord,
+            cells,
+            placedWord: word
+        });
+
+        return true;
     }
 
     fillEmptySpaces() {
@@ -162,6 +234,115 @@ class WordSearchGame {
         });
     }
 
+    updateProgress() {
+        const progress = (this.foundWords.size / this.words.length) * 100;
+        this.progressBarElement.style.width = `${progress}%`;
+        this.progressTextElement.textContent = `${this.foundWords.size}/${this.words.length} words found`;
+    }
+
+    // TIMER SYSTEM
+    startTimer(seconds) {
+        this.timeRemaining = seconds;
+        this.updateTimerDisplay();
+
+        if (this.timer) {
+            clearInterval(this.timer);
+        }
+
+        this.timer = setInterval(() => {
+            if (!this.isPaused) {
+                this.timeRemaining--;
+                this.updateTimerDisplay();
+
+                if (this.timeRemaining <= 0) {
+                    this.timeUp();
+                } else if (this.timeRemaining <= 30) {
+                    this.timerElement.style.color = '#ef4444';
+                }
+            }
+        }, 1000);
+    }
+
+    updateTimerDisplay() {
+        const minutes = Math.floor(this.timeRemaining / 60);
+        const seconds = this.timeRemaining % 60;
+        this.timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    timeUp() {
+        clearInterval(this.timer);
+        this.showToast('⏰ Time\'s up!', 'error');
+        setTimeout(() => {
+            this.resetLevel();
+        }, 2000);
+    }
+
+    // HINT SYSTEM
+    useHint() {
+        const levelData = LEVELS[this.currentLevel - 1];
+        const hintCost = DIFFICULTY_SETTINGS[levelData.difficulty].hintCost;
+
+        if (this.score < hintCost) {
+            this.showToast('Not enough points for a hint!', 'error');
+            return;
+        }
+
+        // Find an unfound word
+        const unfoundWords = this.words.filter(word => !this.foundWords.has(word));
+        if (unfoundWords.length === 0) return;
+
+        const randomWord = unfoundWords[Math.floor(Math.random() * unfoundWords.length)];
+        const wordPos = this.wordPositions.find(wp => wp.word === randomWord);
+
+        if (wordPos) {
+            // Highlight first letter
+            const firstCell = wordPos.cells[0];
+            const cellElement = document.querySelector(`[data-row="${firstCell.row}"][data-col="${firstCell.col}"]`);
+
+            if (cellElement) {
+                cellElement.classList.add('hint');
+                setTimeout(() => {
+                    cellElement.classList.remove('hint');
+                }, 3000);
+
+                this.score -= hintCost;
+                this.scoreElement.textContent = this.score;
+                this.hintsUsed++;
+                this.showToast(`💡 Hint: Look for "${randomWord}"`, 'info');
+                this.saveProgress();
+            }
+        }
+    }
+
+    // COMBO SYSTEM
+    updateCombo() {
+        const now = Date.now();
+        const timeSinceLastWord = now - this.lastWordFoundTime;
+
+        // Reset combo if more than 5 seconds passed
+        if (timeSinceLastWord > 5000) {
+            this.combo = 0;
+        }
+
+        this.combo++;
+        this.lastWordFoundTime = now;
+        this.comboElement.textContent = `${this.combo}x`;
+        this.comboElement.classList.add('active');
+
+        setTimeout(() => {
+            this.comboElement.classList.remove('active');
+        }, 500);
+
+        // Reset combo after 5 seconds
+        if (this.comboTimeout) {
+            clearTimeout(this.comboTimeout);
+        }
+        this.comboTimeout = setTimeout(() => {
+            this.combo = 0;
+            this.comboElement.textContent = '0x';
+        }, 5000);
+    }
+
     attachEventListeners() {
         // Mouse events
         this.gridElement.addEventListener('mousedown', (e) => this.handleSelectionStart(e));
@@ -190,6 +371,7 @@ class WordSearchGame {
 
         // Buttons
         this.resetBtn.addEventListener('click', () => this.resetLevel());
+        this.hintBtn.addEventListener('click', () => this.useHint());
         this.nextBtn.addEventListener('click', () => this.loadLevel(this.currentLevel + 1));
         this.continueBtn.addEventListener('click', () => this.closeVictoryModal());
     }
@@ -298,9 +480,27 @@ class WordSearchGame {
         const wordItem = document.querySelector(`[data-word="${word}"]`);
         if (wordItem) wordItem.classList.add('found');
 
-        // Update score
-        this.score += word.length * 10;
+        // Update combo
+        this.updateCombo();
+
+        // Calculate score with multipliers
+        const levelData = LEVELS[this.currentLevel - 1];
+        const difficultyMultiplier = DIFFICULTY_SETTINGS[levelData.difficulty].scoreMultiplier;
+        const comboBonus = this.combo > 1 ? this.combo * 0.5 : 1;
+        const baseScore = word.length * 10;
+        const totalScore = Math.floor(baseScore * difficultyMultiplier * comboBonus);
+
+        this.score += totalScore;
         this.scoreElement.textContent = this.score;
+
+        // Show combo message
+        if (this.combo > 1) {
+            this.showToast(`🔥 ${this.combo}x Combo! +${totalScore}`, 'success');
+        } else {
+            this.showToast(`✓ ${word} found! +${totalScore}`, 'success');
+        }
+
+        this.updateProgress();
 
         // Check if level is complete
         if (this.foundWords.size === this.words.length) {
@@ -311,13 +511,44 @@ class WordSearchGame {
     }
 
     levelComplete() {
+        clearInterval(this.timer);
+
         const levelData = LEVELS[this.currentLevel - 1];
-        this.showVictory(`Level ${this.currentLevel} Complete! 🎉`);
+
+        // Calculate bonuses
+        const timeBonus = Math.floor(this.timeRemaining * 5);
+        const perfectBonus = this.hintsUsed === 0 ? 500 : 0;
+        const totalBonus = timeBonus + perfectBonus;
+
+        this.score += totalBonus;
+        this.scoreElement.textContent = this.score;
+
+        // Update victory modal
+        document.getElementById('victoryTitle').textContent = '🎉 Level Complete!';
+        document.getElementById('timeBonus').textContent = `+${timeBonus}`;
+        document.getElementById('perfectBonus').textContent = `+${perfectBonus}`;
+        document.getElementById('totalScore').textContent = this.score;
+
+        let message = `Theme: ${levelData.theme}\n`;
+        if (perfectBonus > 0) {
+            message += '🌟 Perfect! No hints used!';
+        }
+
+        document.getElementById('victoryMessage').textContent = message;
+
+        this.showVictory();
         this.nextBtn.style.display = 'block';
+        this.saveProgress();
     }
 
-    showVictory(message) {
-        document.getElementById('victoryMessage').textContent = message;
+    showVictory(customMessage) {
+        if (customMessage) {
+            document.getElementById('victoryTitle').textContent = customMessage;
+            document.getElementById('victoryMessage').textContent = '';
+            document.querySelector('.victory-stats').style.display = 'none';
+        } else {
+            document.querySelector('.victory-stats').style.display = 'flex';
+        }
         this.victoryModal.classList.add('active');
     }
 
@@ -325,14 +556,25 @@ class WordSearchGame {
         this.victoryModal.classList.remove('active');
     }
 
+    showToast(message, type = 'info') {
+        this.toastElement.textContent = message;
+        this.toastElement.className = `toast ${type} show`;
+
+        setTimeout(() => {
+            this.toastElement.classList.remove('show');
+        }, 3000);
+    }
+
     resetLevel() {
+        clearInterval(this.timer);
         this.loadLevel(this.currentLevel);
     }
 
     saveProgress() {
         localStorage.setItem('wordSearchProgress', JSON.stringify({
             level: this.currentLevel,
-            score: this.score
+            score: this.score,
+            timestamp: Date.now()
         }));
     }
 

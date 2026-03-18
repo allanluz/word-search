@@ -12,10 +12,25 @@
         <!-- Header -->
         <header class="header">
             <h1>🔍 Word Search</h1>
-            <div class="level-info">
-                <span class="level-badge">Level <span id="currentLevel">1</span></span>
-                <span class="score">Score: <span id="score">0</span></span>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-label">Level</span>
+                    <span class="stat-value level-badge"><span id="currentLevel">1</span></span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Score</span>
+                    <span class="stat-value" id="score">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Time</span>
+                    <span class="stat-value" id="timer">3:00</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Combo</span>
+                    <span class="stat-value combo-value" id="combo">0x</span>
+                </div>
             </div>
+            <div class="theme-display" id="themeDisplay"></div>
         </header>
 
         <!-- Game Board -->
@@ -33,19 +48,45 @@
 
             <!-- Controls -->
             <div class="controls">
-                <button id="resetBtn" class="btn btn-secondary">Reset Level</button>
-                <button id="nextBtn" class="btn btn-primary" style="display: none;">Next Level</button>
+                <button id="hintBtn" class="btn btn-hint">
+                    💡 Hint <span id="hintCost">(50)</span>
+                </button>
+                <button id="resetBtn" class="btn btn-secondary">🔄 Reset</button>
+                <button id="nextBtn" class="btn btn-primary" style="display: none;">Next Level →</button>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+                <span class="progress-text" id="progressText">0/0 words found</span>
             </div>
         </main>
 
         <!-- Victory Modal -->
         <div id="victoryModal" class="modal">
             <div class="modal-content">
-                <h2>🎉 Level Complete!</h2>
+                <h2 id="victoryTitle">🎉 Level Complete!</h2>
+                <div class="victory-stats">
+                    <div class="victory-stat">
+                        <span class="victory-stat-label">Time Bonus</span>
+                        <span class="victory-stat-value" id="timeBonus">+0</span>
+                    </div>
+                    <div class="victory-stat">
+                        <span class="victory-stat-label">Perfect Bonus</span>
+                        <span class="victory-stat-value" id="perfectBonus">+0</span>
+                    </div>
+                    <div class="victory-stat">
+                        <span class="victory-stat-label">Total Score</span>
+                        <span class="victory-stat-value highlight" id="totalScore">0</span>
+                    </div>
+                </div>
                 <p id="victoryMessage"></p>
                 <button id="continueBtn" class="btn btn-primary">Continue</button>
             </div>
         </div>
+
+        <!-- Notification Toast -->
+        <div id="toast" class="toast"></div>
     </div>
 
     <script src="levels.js"></script>

@@ -48,32 +48,64 @@ body {
 
 .header h1 {
     font-size: clamp(1.5rem, 4vw, 2.5rem);
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
 
-.level-info {
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.stat-item {
     display: flex;
-    justify-content: center;
-    gap: 1.5rem;
-    flex-wrap: wrap;
-    font-size: 1.1rem;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: var(--text-color);
 }
 
 .level-badge {
     background: var(--primary-color);
-    padding: 0.5rem 1rem;
+    padding: 0.3rem 0.8rem;
     border-radius: 20px;
     font-weight: bold;
 }
 
-.score {
+.combo-value {
+    color: var(--secondary-color);
+    text-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+}
+
+.combo-value.active {
+    animation: comboGlow 0.5s ease;
+}
+
+.theme-display {
+    text-align: center;
+    font-size: 1rem;
+    color: var(--text-muted);
+    font-style: italic;
+    padding: 0.5rem;
     background: var(--surface-light);
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
+    border-radius: 8px;
 }
 
 /* ===== GAME CONTAINER ===== */
@@ -219,6 +251,22 @@ body {
     background: var(--border-color);
 }
 
+.btn-hint {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+}
+
+.btn-hint:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+.btn-hint:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
 /* ===== MODAL ===== */
 .modal {
     display: none;
@@ -343,4 +391,125 @@ body {
 
 .cell.found {
     animation: pulse 0.5s ease;
+}
+
+.cell.hint {
+    animation: hintBlink 1s ease infinite;
+}
+
+/* ===== PROGRESS BAR ===== */
+.progress-container {
+    position: relative;
+    width: 100%;
+    height: 30px;
+    background: var(--surface-light);
+    border-radius: 15px;
+    overflow: hidden;
+    margin-top: 1rem;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-weight: bold;
+    font-size: 0.9rem;
+    color: var(--text-color);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* ===== VICTORY MODAL ENHANCEMENTS ===== */
+.victory-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: var(--surface-light);
+    border-radius: 8px;
+}
+
+.victory-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.victory-stat-label {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+.victory-stat-value {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: var(--success-color);
+}
+
+.victory-stat-value.highlight {
+    font-size: 1.5rem;
+    color: var(--secondary-color);
+}
+
+/* ===== TOAST NOTIFICATIONS ===== */
+.toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--surface-color);
+    color: var(--text-color);
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    transform: translateY(100px);
+    transition: all 0.3s ease;
+    z-index: 2000;
+    max-width: 300px;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast.success {
+    border-left: 4px solid var(--success-color);
+}
+
+.toast.error {
+    border-left: 4px solid #ef4444;
+}
+
+.toast.info {
+    border-left: 4px solid var(--primary-color);
+}
+
+/* ===== ADDITIONAL ANIMATIONS ===== */
+@keyframes comboGlow {
+    0%, 100% {
+        transform: scale(1);
+        text-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+    }
+    50% {
+        transform: scale(1.2);
+        text-shadow: 0 0 20px rgba(139, 92, 246, 1);
+    }
+}
+
+@keyframes hintBlink {
+    0%, 100% {
+        box-shadow: 0 0 0 rgba(245, 158, 11, 0);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(245, 158, 11, 0.8);
+    }
 }
