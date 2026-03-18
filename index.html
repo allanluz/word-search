@@ -15,7 +15,13 @@
             <div class="stats-grid">
                 <div class="stat-item">
                     <span class="stat-label">Level</span>
-                    <span class="stat-value level-badge"><span id="currentLevel">1</span></span>
+                    <div class="level-selector">
+                        <button id="prevLevelBtn" class="level-nav-btn">◀</button>
+                        <select id="levelSelect" class="level-select">
+                            <!-- Populated by JavaScript -->
+                        </select>
+                        <button id="nextLevelBtn" class="level-nav-btn">▶</button>
+                    </div>
                 </div>
                 <div class="stat-item">
                     <span class="stat-label">Score</span>

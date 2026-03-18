@@ -32,7 +32,9 @@ class WordSearchGame {
     initElements() {
         this.gridElement = document.getElementById('grid');
         this.wordsListElement = document.getElementById('wordsList');
-        this.currentLevelElement = document.getElementById('currentLevel');
+        this.levelSelect = document.getElementById('levelSelect');
+        this.prevLevelBtn = document.getElementById('prevLevelBtn');
+        this.nextLevelBtn = document.getElementById('nextLevelBtn');
         this.scoreElement = document.getElementById('score');
         this.timerElement = document.getElementById('timer');
         this.comboElement = document.getElementById('combo');
@@ -46,6 +48,19 @@ class WordSearchGame {
         this.victoryModal = document.getElementById('victoryModal');
         this.continueBtn = document.getElementById('continueBtn');
         this.toastElement = document.getElementById('toast');
+
+        // Populate level selector
+        this.populateLevelSelector();
+    }
+
+    populateLevelSelector() {
+        this.levelSelect.innerHTML = '';
+        LEVELS.forEach((level, index) => {
+            const option = document.createElement('option');
+            option.value = level.level;
+            option.textContent = `Level ${level.level}`;
+            this.levelSelect.appendChild(option);
+        });
     }
 
     loadLevel(levelNumber) {
@@ -64,7 +79,9 @@ class WordSearchGame {
         this.hintsUsed = 0;
         this.levelStartTime = Date.now();
 
-        this.currentLevelElement.textContent = levelNumber;
+        // Update level selector
+        this.levelSelect.value = levelNumber;
+        this.updateLevelNavButtons();
         this.themeDisplayElement.textContent = `Theme: ${levelData.theme}`;
         this.nextBtn.style.display = 'none';
 
@@ -211,6 +228,10 @@ class WordSearchGame {
         this.gridElement.innerHTML = '';
         this.gridElement.style.gridTemplateColumns = `repeat(${this.grid.length}, 1fr)`;
 
+        // Set data attribute for responsive sizing
+        this.gridElement.setAttribute('data-size', this.grid.length);
+        this.gridElement.style.setProperty('--grid-columns', this.grid.length);
+
         for (let row = 0; row < this.grid.length; row++) {
             for (let col = 0; col < this.grid[row].length; col++) {
                 const cell = document.createElement('div');
@@ -221,6 +242,13 @@ class WordSearchGame {
                 this.gridElement.appendChild(cell);
             }
         }
+    }
+
+    updateLevelNavButtons() {
+        // Disable prev button on level 1
+        this.prevLevelBtn.disabled = this.currentLevel === 1;
+        // Disable next button on last level
+        this.nextLevelBtn.disabled = this.currentLevel === LEVELS.length;
     }
 
     renderWordsList() {
@@ -382,6 +410,24 @@ class WordSearchGame {
         this.bilingualBtn.addEventListener('click', () => this.toggleBilingualMode());
         this.nextBtn.addEventListener('click', () => this.loadLevel(this.currentLevel + 1));
         this.continueBtn.addEventListener('click', () => this.closeVictoryModal());
+
+        // Level selector
+        this.levelSelect.addEventListener('change', (e) => {
+            const selectedLevel = parseInt(e.target.value);
+            this.loadLevel(selectedLevel);
+        });
+
+        this.prevLevelBtn.addEventListener('click', () => {
+            if (this.currentLevel > 1) {
+                this.loadLevel(this.currentLevel - 1);
+            }
+        });
+
+        this.nextLevelBtn.addEventListener('click', () => {
+            if (this.currentLevel < LEVELS.length) {
+                this.loadLevel(this.currentLevel + 1);
+            }
+        });
     }
 
     handleSelectionStart(e) {
