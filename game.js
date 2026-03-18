@@ -420,11 +420,26 @@ class WordSearchGame {
         this.isSelecting = false;
 
         // Use the stored selection path to maintain correct order
-        const allSelected = this.currentSelectionPath || [];
+        let allSelected = this.currentSelectionPath || [];
+
+        // Fallback: if no path stored, try to get from DOM (shouldn't happen but safety check)
+        if (allSelected.length === 0) {
+            allSelected = [
+                ...document.querySelectorAll('.cell.selected'),
+                ...document.querySelectorAll('.cell.temporary')
+            ];
+        }
 
         if (allSelected.length > 0) {
-            const word = Array.from(allSelected).map(cell => cell.textContent).join('');
-            this.checkWord(word, allSelected);
+            // Get the word from the selected cells in order
+            const word = Array.from(allSelected)
+                .filter(cell => cell && cell.textContent)
+                .map(cell => cell.textContent)
+                .join('');
+
+            if (word.length > 0) {
+                this.checkWord(word, allSelected);
+            }
         }
 
         // Clear selections
@@ -470,13 +485,35 @@ class WordSearchGame {
     }
 
     checkWord(word, cells) {
-        // Check forward and backward
+        if (!word || word.length === 0 || cells.length === 0) {
+            return;
+        }
+
+        // Check both forward and backward
         const reversedWord = word.split('').reverse().join('');
 
+        // Debug log (can be removed later)
+        console.log('Checking word:', word);
+        console.log('Reversed word:', reversedWord);
+        console.log('Available words:', this.words);
+        console.log('Word found forward?', this.words.includes(word));
+        console.log('Word found backward?', this.words.includes(reversedWord));
+
+        // Try to find the word in either direction
+        let foundWord = null;
+
         if (this.words.includes(word) && !this.foundWords.has(word)) {
-            this.markWordFound(word, cells);
+            foundWord = word;
         } else if (this.words.includes(reversedWord) && !this.foundWords.has(reversedWord)) {
-            this.markWordFound(reversedWord, cells);
+            foundWord = reversedWord;
+        }
+
+        // If word found in either direction, mark it
+        if (foundWord) {
+            console.log('✅ Found word:', foundWord);
+            this.markWordFound(foundWord, cells);
+        } else {
+            console.log('❌ Word not found in list');
         }
     }
 
