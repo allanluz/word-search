@@ -21,6 +21,7 @@ class WordSearchGame {
         this.hintsUsed = 0;
         this.levelStartTime = 0;
         this.isPaused = false;
+        this.bilingualMode = false; // PT-BR words, EN grid
 
         this.initElements();
         this.loadProgress();
@@ -40,6 +41,7 @@ class WordSearchGame {
         this.progressTextElement = document.getElementById('progressText');
         this.resetBtn = document.getElementById('resetBtn');
         this.hintBtn = document.getElementById('hintBtn');
+        this.bilingualBtn = document.getElementById('bilingualBtn');
         this.nextBtn = document.getElementById('nextBtn');
         this.victoryModal = document.getElementById('victoryModal');
         this.continueBtn = document.getElementById('continueBtn');
@@ -226,8 +228,12 @@ class WordSearchGame {
         this.words.forEach(word => {
             const wordItem = document.createElement('div');
             wordItem.className = 'word-item';
-            wordItem.textContent = word;
-            wordItem.dataset.word = word;
+
+            // Se modo bilíngue estiver ativo, mostra PT-BR, senão mostra inglês
+            const displayText = this.bilingualMode && TRANSLATIONS[word] ? TRANSLATIONS[word] : word;
+            wordItem.textContent = displayText;
+            wordItem.dataset.word = word; // Mantém palavra original para verificação
+
             if (this.foundWords.has(word)) {
                 wordItem.classList.add('found');
             }
@@ -373,13 +379,15 @@ class WordSearchGame {
         // Buttons
         this.resetBtn.addEventListener('click', () => this.resetLevel());
         this.hintBtn.addEventListener('click', () => this.useHint());
+        this.bilingualBtn.addEventListener('click', () => this.toggleBilingualMode());
         this.nextBtn.addEventListener('click', () => this.loadLevel(this.currentLevel + 1));
         this.continueBtn.addEventListener('click', () => this.closeVictoryModal());
     }
 
     handleSelectionStart(e) {
         if (!e.target.classList.contains('cell')) return;
-        if (e.target.classList.contains('found')) return;
+        // Permitir seleção mesmo em células já encontradas
+        // if (e.target.classList.contains('found')) return;
 
         this.isSelecting = true;
         this.selectedCells = [e.target];
@@ -389,7 +397,8 @@ class WordSearchGame {
     handleSelectionMove(e) {
         if (!this.isSelecting) return;
         if (!e.target.classList.contains('cell')) return;
-        if (e.target.classList.contains('found')) return;
+        // Permitir movimento sobre células já encontradas
+        // if (e.target.classList.contains('found')) return;
 
         const lastCell = this.selectedCells[this.selectedCells.length - 1];
         if (lastCell === e.target) return;
@@ -538,13 +547,22 @@ class WordSearchGame {
         this.score += totalScore;
         this.scoreElement.textContent = this.score;
 
-        // Show combo message
+        // Preparar mensagem com tradução
+        const translation = TRANSLATIONS[word];
+        let message = '';
+
         if (this.combo > 1) {
-            this.showToast(`🔥 ${this.combo}x Combo! +${totalScore}`, 'success');
-        } else {
-            this.showToast(`✓ ${word} found! +${totalScore}`, 'success');
+            message = `🔥 ${this.combo}x Combo! `;
         }
 
+        // Mostrar palavra em inglês com tradução
+        if (translation) {
+            message += `${word} (${translation}) +${totalScore}`;
+        } else {
+            message += `${word} +${totalScore}`;
+        }
+
+        this.showToast(message, 'success');
         this.updateProgress();
 
         // Check if level is complete
@@ -601,6 +619,27 @@ class WordSearchGame {
         this.victoryModal.classList.remove('active');
     }
 
+    toggleBilingualMode() {
+        this.bilingualMode = !this.bilingualMode;
+
+        // Atualizar visual do botão
+        if (this.bilingualMode) {
+            this.bilingualBtn.classList.add('active');
+            this.bilingualBtn.textContent = '🇧🇷 PT-BR';
+            this.showToast('Modo Bilíngue Ativado: Palavras em PT-BR', 'info');
+        } else {
+            this.bilingualBtn.classList.remove('active');
+            this.bilingualBtn.textContent = '🌐 PT-BR';
+            this.showToast('Modo Bilíngue Desativado', 'info');
+        }
+
+        // Re-renderizar lista de palavras
+        this.renderWordsList();
+
+        // Salvar preferência
+        localStorage.setItem('bilingualMode', this.bilingualMode);
+    }
+
     showToast(message, type = 'info') {
         this.toastElement.textContent = message;
         this.toastElement.className = `toast ${type} show`;
@@ -630,6 +669,14 @@ class WordSearchGame {
             this.currentLevel = data.level;
             this.score = data.score;
             this.scoreElement.textContent = this.score;
+        }
+
+        // Carregar preferência do modo bilíngue
+        const bilingualSaved = localStorage.getItem('bilingualMode');
+        if (bilingualSaved === 'true') {
+            this.bilingualMode = true;
+            this.bilingualBtn.classList.add('active');
+            this.bilingualBtn.textContent = '🇧🇷 PT-BR';
         }
     }
 }

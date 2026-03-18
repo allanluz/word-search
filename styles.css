@@ -161,6 +161,9 @@ body {
     border-radius: 12px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     overflow-x: auto;
+    overflow-y: visible;
+    width: 100%;
+    max-width: 100%;
 }
 
 .grid {
@@ -171,11 +174,15 @@ body {
     border-radius: 8px;
     touch-action: none;
     user-select: none;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .cell {
     width: var(--cell-size);
     height: var(--cell-size);
+    min-width: var(--cell-size);
+    min-height: var(--cell-size);
     background: var(--surface-light);
     border: 1px solid var(--border-color);
     border-radius: 6px;
@@ -187,6 +194,8 @@ body {
     cursor: pointer;
     transition: all 0.2s ease;
     text-transform: uppercase;
+    overflow: hidden;
+    box-sizing: border-box;
 }
 
 .cell:hover {
@@ -204,7 +213,7 @@ body {
 .cell.found {
     background: var(--success-color);
     color: white;
-    pointer-events: none;
+    /* Removido pointer-events: none para permitir seleção sobre palavras encontradas */
 }
 
 .cell.temporary {
@@ -265,6 +274,21 @@ body {
     opacity: 0.5;
     cursor: not-allowed;
     transform: none;
+}
+
+.btn-bilingual {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+}
+
+.btn-bilingual:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.btn-bilingual.active {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.3);
 }
 
 /* ===== MODAL ===== */
