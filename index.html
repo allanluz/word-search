@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="Progressive word search puzzle game">
+    <title>Word Search Game</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🔍 Word Search</h1>
+            <div class="level-info">
+                <span class="level-badge">Level <span id="currentLevel">1</span></span>
+                <span class="score">Score: <span id="score">0</span></span>
+            </div>
+        </header>
+
+        <!-- Game Board -->
+        <main class="game-container">
+            <!-- Words to Find -->
+            <div class="words-panel">
+                <h2>Find These Words:</h2>
+                <div id="wordsList" class="words-list"></div>
+            </div>
+
+            <!-- Grid -->
+            <div class="grid-container">
+                <div id="grid" class="grid"></div>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls">
+                <button id="resetBtn" class="btn btn-secondary">Reset Level</button>
+                <button id="nextBtn" class="btn btn-primary" style="display: none;">Next Level</button>
+            </div>
+        </main>
+
+        <!-- Victory Modal -->
+        <div id="victoryModal" class="modal">
+            <div class="modal-content">
+                <h2>🎉 Level Complete!</h2>
+                <p id="victoryMessage"></p>
+                <button id="continueBtn" class="btn btn-primary">Continue</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="levels.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
