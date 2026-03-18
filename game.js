@@ -9,6 +9,7 @@ class WordSearchGame {
         this.foundWords = new Set();
         this.selectedCells = [];
         this.isSelecting = false;
+        this.currentSelectionPath = null; // Stores the current selection in correct order
         this.wordPositions = []; // Stores {word, cells: [{row, col}]}
 
         // Enhanced features
@@ -401,11 +402,16 @@ class WordSearchGame {
         // Check if selection is valid (straight line)
         const cells = this.getCellsInLine(this.selectedCells[0], e.target);
         if (cells) {
+            // Store the current selection path for later use
+            this.currentSelectionPath = cells;
+
             cells.forEach(cell => {
                 if (!cell.classList.contains('selected') && !cell.classList.contains('found')) {
                     cell.classList.add('temporary');
                 }
             });
+        } else {
+            this.currentSelectionPath = null;
         }
     }
 
@@ -413,11 +419,8 @@ class WordSearchGame {
         if (!this.isSelecting) return;
         this.isSelecting = false;
 
-        // Get all selected cells (including temporary)
-        const allSelected = [
-            ...document.querySelectorAll('.cell.selected'),
-            ...document.querySelectorAll('.cell.temporary')
-        ];
+        // Use the stored selection path to maintain correct order
+        const allSelected = this.currentSelectionPath || [];
 
         if (allSelected.length > 0) {
             const word = Array.from(allSelected).map(cell => cell.textContent).join('');
@@ -430,6 +433,7 @@ class WordSearchGame {
         });
 
         this.selectedCells = [];
+        this.currentSelectionPath = null;
     }
 
     getCellsInLine(startCell, endCell) {
@@ -441,24 +445,28 @@ class WordSearchGame {
         const deltaRow = endRow - startRow;
         const deltaCol = endCol - startCol;
 
-        // Check if it's a straight line
+        // Check if it's a straight line (horizontal, vertical, or diagonal)
         if (deltaRow !== 0 && deltaCol !== 0 && Math.abs(deltaRow) !== Math.abs(deltaCol)) {
             return null;
         }
 
         const steps = Math.max(Math.abs(deltaRow), Math.abs(deltaCol));
-        const stepRow = deltaRow === 0 ? 0 : deltaRow / Math.abs(deltaRow);
-        const stepCol = deltaCol === 0 ? 0 : deltaCol / Math.abs(deltaCol);
+
+        // Calculate step direction (-1, 0, or 1 for each axis)
+        const stepRow = steps === 0 ? 0 : deltaRow / steps;
+        const stepCol = steps === 0 ? 0 : deltaCol / steps;
 
         const cells = [];
         for (let i = 0; i <= steps; i++) {
-            const row = startRow + (stepRow * i);
-            const col = startCol + (stepCol * i);
+            const row = Math.round(startRow + (stepRow * i));
+            const col = Math.round(startCol + (stepCol * i));
             const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
-            if (cell) cells.push(cell);
+            if (cell) {
+                cells.push(cell);
+            }
         }
 
-        return cells;
+        return cells.length > 0 ? cells : null;
     }
 
     checkWord(word, cells) {
